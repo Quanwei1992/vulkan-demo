@@ -1,6 +1,40 @@
+#include "hello_triangle_app.h"
 
+#include "log.h"
+
+#include <iostream>
+#include <stdexcept>
+#include <cstdlib>
+
+
+struct AutoInitiazeCleanupRumtime
+{
+	AutoInitiazeCleanupRumtime()
+	{
+		LogSystem::initialize();
+	}
+	~AutoInitiazeCleanupRumtime()
+	{
+		LogSystem::shutdown();
+	}
+};
 
 int main()
 {
-	return 0;
+	AutoInitiazeCleanupRumtime _;
+
+	HelloTriangleApplication app;
+
+	try
+	{
+		app.run();
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
+
+
+	return EXIT_SUCCESS;
 }
