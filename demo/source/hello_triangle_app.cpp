@@ -30,12 +30,7 @@ struct AppContext
 	std::vector<VkImage> swapChainImages;
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
-
-#ifdef NDEBUG
-	const bool enableValidationLayers = false;
-#else
-	const bool enableValidationLayers = true;
-#endif
+	std::vector<VkImageView> swapChainImageViews;
 };
 
 struct QueueFamilyIndices
@@ -56,6 +51,13 @@ struct SwapChainSupportDetails
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> presentModes;
 };
+
+
+#ifdef NDEBUG
+const bool enableValidationLayers = false;
+#else
+const bool enableValidationLayers = true;
+#endif
 
 const std::vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
@@ -284,11 +286,12 @@ void HelloTriangleApplication::initVulkan()
 	pickPhysicalDevice();
 	createLogicalDevice();
 	createSwapChain();
+	createImageViews();
 }
 
 void HelloTriangleApplication::createInstance()
 {
-	if (ctx->enableValidationLayers && !checkValidationLayerSupport())
+	if (enableValidationLayers && !checkValidationLayerSupport())
 	{
 		LogFatal("validation layers requested, but not available!");
 		return;
@@ -312,7 +315,7 @@ void HelloTriangleApplication::createInstance()
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	createInfo.ppEnabledExtensionNames = extensions.data();
 
-	if (ctx->enableValidationLayers)
+	if (enableValidationLayers)
 	{
 		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();
@@ -360,7 +363,7 @@ bool HelloTriangleApplication::checkValidationLayerSupport()
 
 void HelloTriangleApplication::setupDebugMessenger()
 {
-	if (!ctx->enableValidationLayers) return;
+	if (!enableValidationLayers) return;
 
 	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -443,7 +446,7 @@ void HelloTriangleApplication::createLogicalDevice()
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-	if (ctx->enableValidationLayers)
+	if (enableValidationLayers)
 	{
 		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();
@@ -519,6 +522,31 @@ void HelloTriangleApplication::createSwapChain()
 	ctx->swapChainExtent = extent;
 }
 
+void HelloTriangleApplication::createImageViews()
+{
+	ctx->swapChainImageViews.resize(ctx->swapChainImages.size());
+	for (size_t i = 0;i<ctx->swapChainImages.size();i++)
+	{
+		VkImageViewCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.image = ctx->swapChainImages[i];
+		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.baseMipLevel = 0;
+		createInfo.subresourceRange.levelCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = 0;
+		createInfo.subresourceRange.layerCount = 1;
+
+		if (vkCreateImageView(ctx->device, &createInfo, nullptr, &ctx->swapChainImageViews[i]) != VK_SUCCESS) {
+			LogFatal("failed to create image views!");
+		}
+	}
+}
+
 std::vector<const char*> HelloTriangleApplication::getRequiredExtension()
 {
 	uint32_t glfwExtensionCount = 0;
@@ -526,7 +554,7 @@ std::vector<const char*> HelloTriangleApplication::getRequiredExtension()
 	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
 	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-	if (ctx->enableValidationLayers)
+	if (enableValidationLayers)
 	{
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
@@ -543,11 +571,15 @@ void HelloTriangleApplication::mainLoop()
 
 void HelloTriangleApplication::cleanup()
 {
+	for (auto imageView : ctx->swapChainImageViews) {
+		vkDestroyImageView(ctx->device, imageView, nullptr);
+	}
+
 	vkDestroySwapchainKHR(ctx->device, ctx->swapChain, nullptr);
 
 	vkDestroyDevice(ctx->device, nullptr);
 
-	if (ctx->enableValidationLayers)
+	if (enableValidationLayers)
 	{
 		DestroyDebugUtilsMessengerEXT(ctx->instance, ctx->debugMessenger,nullptr);
 	}

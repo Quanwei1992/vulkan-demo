@@ -20,6 +20,7 @@ private:
 	void pickPhysicalDevice();
 	void createLogicalDevice();
 	void createSwapChain();
+	void createImageViews();
 
 
 	void mainLoop();
