@@ -547,6 +547,11 @@ void HelloTriangleApplication::createImageViews()
 	}
 }
 
+void HelloTriangleApplication::createGraphicsPipeline()
+{
+
+}
+
 std::vector<const char*> HelloTriangleApplication::getRequiredExtension()
 {
 	uint32_t glfwExtensionCount = 0;
