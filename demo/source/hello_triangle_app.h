@@ -16,6 +16,7 @@ private:
 	void createInstance();
 	bool checkValidationLayerSupport();
 	void setupDebugMessenger();
+	void createSurface();
 	void pickPhysicalDevice();
 	void createLogicalDevice();
 
